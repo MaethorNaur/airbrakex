@@ -9,7 +9,7 @@ defmodule Airbrakex.ExceptionParser do
     }
   end
 
-  defp stacktrace(stacktrace) do
+  def stacktrace(stacktrace) do
     Enum.map(stacktrace, fn
       {module, function, args, []} ->
         %{

@@ -12,7 +12,7 @@ defmodule Airbrakex.LoggerBackend do
 
   @behaviour :gen_event
 
-  alias Airbrakex.{LoggerParser, Notifier}
+  alias Airbrakex.{ExceptionParser, LoggerParser, Notifier}
 
   def init(__MODULE__) do
     {:ok, configure([])}
@@ -28,7 +28,7 @@ defmodule Airbrakex.LoggerBackend do
 
   def handle_event({level, _gl, event}, %{metadata: keys} = state) do
     if proceed?(event) and meet_level?(level, state.level) do
-      post_event(event, keys)
+      post_event(level, event, keys)
     end
 
     {:ok, state}
@@ -58,13 +58,38 @@ defmodule Airbrakex.LoggerBackend do
     Logger.compare_levels(lvl, min) != :lt
   end
 
-  defp post_event({Logger, msg, _ts, meta}, keys) do
+  defp post_event(level, {Logger, msg, _ts, meta}, keys) do
     msg = IO.chardata_to_string(msg)
     meta = take_into_map(meta, keys)
 
-    msg
-    |> LoggerParser.parse()
-    |> Notifier.notify(params: meta)
+    args =
+      msg
+      |> LoggerParser.parse()
+      |> merge_backtrace(level, meta)
+
+    apply(Notifier, :notify, args)
+  end
+
+  defp merge_backtrace(error, level, meta) do
+    backtrace = Map.get(meta, :backtrace)
+
+    error =
+      error
+      |> Map.merge(
+        if backtrace != nil,
+          do: %{backtrace: backtrace |> ExceptionParser.stacktrace()},
+          else: %{}
+      )
+
+    [
+      error,
+      [
+        context: %{severity: level},
+        params: meta |>
+        Enum.filter(&(elem(&1, 0) != :backtrace))
+        |> Enum.into(%{})
+      ]
+    ]
   end
 
   defp take_into_map(metadata, keys) do

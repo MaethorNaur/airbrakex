@@ -20,6 +20,7 @@ defmodule Airbrakex.Notifier do
       |> add_error(error)
       |> add_context(Keyword.get(options, :context))
       |> add(:session, Keyword.get(options, :session))
+      |> add(:backtrace, Keyword.get(options, :backtrace))
       |> add(:params, Keyword.get(options, :params))
       |> add(:environment, Keyword.get(options, :environment, %{}))
       |> Poison.encode!()
