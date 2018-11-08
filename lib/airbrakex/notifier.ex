@@ -39,7 +39,7 @@ defmodule Airbrakex.Notifier do
   end
 
   defp add_context(payload, nil) do
-    payload |> Map.put(:context, %{environment: environment()})
+    payload |> Map.put(:context, %{environment: environment(), remoteAddr: node_ip()})
   end
 
   defp add_context(payload, context) do
@@ -65,4 +65,6 @@ defmodule Airbrakex.Notifier do
   defp environment do
     Config.get(:airbrakex, :environment, @default_env)
   end
+
+  defp node_ip, do: Node.self() |> to_string |> String.split("@")
 end
