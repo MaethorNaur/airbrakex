@@ -21,7 +21,7 @@ defmodule Airbrakex.Notifier do
       |> add_context(Keyword.get(options, :context))
       |> add(:session, Keyword.get(options, :session))
       |> add(:backtrace, Keyword.get(options, :backtrace))
-      |> add(:params, Keyword.get(options, :params))
+      |> add_params(Keyword.get(options, :params, %{}))
       |> add(:environment, Keyword.get(options, :environment, %{}))
       |> Poison.encode!()
 
@@ -36,6 +36,14 @@ defmodule Airbrakex.Notifier do
 
   defp add_error(payload, error) do
     payload |> Map.put(:errors, [error])
+  end
+
+  defp add_params(payload, params) do
+    params =
+      params
+      |> Map.put_new(:node_ip, node_ip())
+
+    payload |> Map.put(:params, params)
   end
 
   defp add_context(payload, nil) do
@@ -68,5 +76,5 @@ defmodule Airbrakex.Notifier do
     Config.get(:airbrakex, :environment, @default_env)
   end
 
-  defp node_ip, do: Node.self() |> to_string |> String.split("@")
+  defp node_ip, do: Node.self() |> to_string |> String.split("@") |> Enum.at(1)
 end
