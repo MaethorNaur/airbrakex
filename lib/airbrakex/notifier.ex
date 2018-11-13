@@ -39,13 +39,15 @@ defmodule Airbrakex.Notifier do
   end
 
   defp add_context(payload, nil) do
-    payload |> Map.put(:context, %{environment: environment(), remoteAddr: node_ip()})
+    payload
+    |> Map.put(:context, %{environment: environment(), remoteAddr: node_ip(), language: "Elixir"})
   end
 
   defp add_context(payload, context) do
     context =
       context
       |> Map.put_new(:environment, environment())
+      |> Map.put_new(:remoteAddr, node_ip())
       |> Map.put_new(:language, "Elixir")
 
     payload |> Map.put(:context, context)
